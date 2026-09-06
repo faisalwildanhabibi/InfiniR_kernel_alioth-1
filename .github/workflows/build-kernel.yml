@@ -1,0 +1,97 @@
+name: Build InfiniR Alioth Kernel (crDroid v11.17)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - v3.00-ksun-gorhanhee
+
+jobs:
+  build:
+    name: Build Kernel & AnyKernel3 Zip
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout Kernel Source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 1
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc \
+            bison \
+            build-essential \
+            ca-certificates \
+            curl \
+            flex \
+            git \
+            gnupg \
+            gperf \
+            libelf-dev \
+            libssl-dev \
+            python3 \
+            zip \
+            unzip
+
+      - name: Download AOSP Clang & Binutils
+        run: |
+          mkdir -p clang
+          echo "Downloading AOSP Clang (r416183b)..."
+          curl -LO "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android12-release/clang-r416183b.tar.gz"
+          tar -C clang/ -zxf clang-r416183b.tar.gz
+          rm -f clang-r416183b.tar.gz
+
+          sudo apt-get install -y gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+
+      - name: Build Kernel Image
+        run: |
+          export PATH="$(pwd)/clang/bin:$PATH"
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export KBUILD_BUILD_USER="raystef66-GoRhanHee"
+          export KBUILD_BUILD_HOST="crDroid-CI"
+
+          mkdir -p out
+          echo "Configuring alioth_defconfig..."
+          make -j$(nproc --all) O=out ARCH=arm64 alioth_defconfig
+
+          echo "Compiling Linux 4.19 Alioth Kernel with Clang..."
+          make -j$(nproc --all) O=out \
+            ARCH=arm64 \
+            CC=clang \
+            LLVM=1 \
+            LLVM_IAS=1 \
+            CLANG_TRIPLE=aarch64-linux-gnu- \
+            CROSS_COMPILE=aarch64-linux-gnu- \
+            CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
+
+      - name: Package AnyKernel3 Zip
+        run: |
+          IMAGE="out/arch/arm64/boot/Image"
+          if [ ! -f "$IMAGE" ]; then
+            echo "ERROR: Kernel Image not found at $IMAGE"
+            exit 1
+          fi
+
+          cp "$IMAGE" AnyKernel3/Image
+          if [ -f "out/arch/arm64/boot/dtbo.img" ]; then
+            cp "out/arch/arm64/boot/dtbo.img" AnyKernel3/dtbo.img
+          fi
+
+          cd AnyKernel3
+          ZIP_NAME="InfiniR_Alioth_v3.00_KSUN_GoRhanHee_crDroid11.17.zip"
+          zip -r9 "../$ZIP_NAME" * -x .git .github README.md
+          cd ..
+
+          echo "Kernel package created successfully: $ZIP_NAME"
+          ls -lh "$ZIP_NAME"
+
+      - name: Upload AnyKernel3 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: InfiniR_Alioth_v3.00_KSUN_crDroid11.17
+          path: InfiniR_Alioth_v3.00_KSUN_GoRhanHee_crDroid11.17.zip
+          if-no-files-found: error
