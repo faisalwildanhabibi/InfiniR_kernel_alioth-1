@@ -1384,6 +1384,10 @@ void susfs_show_variant(void __user **arg) {
 	copy_to_user(uptr, &info, sizeof(info));
 }
 
+void susfs_start_sdcard_monitor_fn(void) {
+	// Stub for Android 15 crDroid
+}
+
 /* susfs_init */
 void susfs_init(void) {
 	spin_lock_init(&susfs_spin_lock);

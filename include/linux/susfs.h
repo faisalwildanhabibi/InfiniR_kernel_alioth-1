@@ -210,6 +210,7 @@ int susfs_get_enabled_features(void __user **arg);
 void susfs_set_avc_log_spoofing(void __user **arg);
 void susfs_show_version(void __user **arg);
 void susfs_show_variant(void __user **arg);
+void susfs_start_sdcard_monitor_fn(void);
 
 /* susfs_init */
 void susfs_init(void);
