@@ -123,7 +123,7 @@ out_kfree_info:
 	return err;
 }
 
-int susfs_add_sus_path(struct st_susfs_sus_path* __user user_info) {
+int susfs_add_sus_path(void __user **arg) {
 	struct st_susfs_sus_path_list *cursor = NULL, *temp = NULL;
 	struct st_susfs_sus_path_list *new_list = NULL;
 	struct st_susfs_sus_path info;
@@ -131,8 +131,7 @@ int susfs_add_sus_path(struct st_susfs_sus_path* __user user_info) {
 	struct inode *inode = NULL;
 	char *resolved_pathname = NULL, *tmp_buf = NULL;
 	int err = 0;
-
-	user_info = (struct st_susfs_sus_path __user *)susfs_resolve_uptr((void __user *)user_info);
+	struct st_susfs_sus_path __user *user_info = (struct st_susfs_sus_path __user *)susfs_resolve_uptr((void __user *)arg);
 
 	err = copy_from_user(&info, user_info, sizeof(info));
 	if (err) {
@@ -251,7 +250,7 @@ out_path_put_path:
 	return err;
 }
 
-int susfs_add_sus_path_loop(struct st_susfs_sus_path* __user user_info) {
+int susfs_add_sus_path_loop(void __user **arg) {
 	struct st_susfs_sus_path_list *cursor = NULL, *temp = NULL;
 	struct st_susfs_sus_path_list *new_list = NULL;
 	struct st_susfs_sus_path info;
@@ -259,8 +258,7 @@ int susfs_add_sus_path_loop(struct st_susfs_sus_path* __user user_info) {
 	struct inode *inode = NULL;
 	char *resolved_pathname = NULL, *tmp_buf = NULL;
 	int err = 0;
-
-	user_info = (struct st_susfs_sus_path __user *)susfs_resolve_uptr((void __user *)user_info);
+	struct st_susfs_sus_path __user *user_info = (struct st_susfs_sus_path __user *)susfs_resolve_uptr((void __user *)arg);
 
 	err = copy_from_user(&info, user_info, sizeof(info));
 	if (err) {
@@ -650,14 +648,13 @@ static int susfs_update_sus_kstat_inode(char *target_pathname) {
 	return 0;
 }
 
-int susfs_add_sus_kstat(struct st_susfs_sus_kstat* __user user_info) {
+int susfs_add_sus_kstat(void __user **arg) {
 	struct st_susfs_sus_kstat info;
 	struct st_susfs_sus_kstat_hlist *new_entry, *tmp_entry;
 	struct hlist_node *tmp_node;
 	int bkt;
 	bool update_hlist = false;
-
-	user_info = (struct st_susfs_sus_kstat __user *)susfs_resolve_uptr((void __user *)user_info);
+	struct st_susfs_sus_kstat __user *user_info = (struct st_susfs_sus_kstat __user *)susfs_resolve_uptr((void __user *)arg);
 
 	if (copy_from_user(&info, user_info, sizeof(info))) {
 		SUSFS_LOGE("failed copying from userspace\n");
@@ -747,14 +744,13 @@ int susfs_add_sus_kstat(struct st_susfs_sus_kstat* __user user_info) {
 	return 0;
 }
 
-int susfs_update_sus_kstat(struct st_susfs_sus_kstat* __user user_info) {
+int susfs_update_sus_kstat(void __user **arg) {
 	struct st_susfs_sus_kstat info;
 	struct st_susfs_sus_kstat_hlist *new_entry, *tmp_entry;
 	struct hlist_node *tmp_node;
 	int bkt;
 	int err = 0;
-
-	user_info = (struct st_susfs_sus_kstat __user *)susfs_resolve_uptr((void __user *)user_info);
+	struct st_susfs_sus_kstat __user *user_info = (struct st_susfs_sus_kstat __user *)susfs_resolve_uptr((void __user *)arg);
 
 	if (copy_from_user(&info, user_info, sizeof(info))) {
 		SUSFS_LOGE("failed copying from userspace\n");
@@ -838,12 +834,11 @@ void susfs_sus_ino_for_show_map_vma(unsigned long ino, dev_t *out_dev, unsigned 
 /* try_umount */
 #ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
 static LIST_HEAD(LH_TRY_UMOUNT_PATH);
-int susfs_add_try_umount(struct st_susfs_try_umount* __user user_info) {
+int susfs_add_try_umount(void __user **arg) {
 	struct st_susfs_try_umount_list *cursor = NULL, *temp = NULL;
 	struct st_susfs_try_umount_list *new_list = NULL;
 	struct st_susfs_try_umount info;
-
-	user_info = (struct st_susfs_try_umount __user *)susfs_resolve_uptr((void __user *)user_info);
+	struct st_susfs_try_umount __user *user_info = (struct st_susfs_try_umount __user *)susfs_resolve_uptr((void __user *)arg);
 
 	if (copy_from_user(&info, user_info, sizeof(info))) {
 		SUSFS_LOGE("failed copying from userspace\n");
@@ -976,10 +971,9 @@ static void susfs_my_uname_init(void) {
 	memset(&my_uname, 0, sizeof(my_uname));
 }
 
-int susfs_set_uname(struct st_susfs_uname* __user user_info) {
+int susfs_set_uname(void __user **arg) {
 	struct st_susfs_uname info;
-
-	user_info = (struct st_susfs_uname __user *)susfs_resolve_uptr((void __user *)user_info);
+	struct st_susfs_uname __user *user_info = (struct st_susfs_uname __user *)susfs_resolve_uptr((void __user *)arg);
 
 	if (copy_from_user(&info, user_info, sizeof(struct st_susfs_uname))) {
 		SUSFS_LOGE("failed copying from userspace.\n");
@@ -1028,10 +1022,9 @@ void susfs_set_log(bool enabled) {
 /* spoof_cmdline_or_bootconfig */
 #ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
 static char *fake_cmdline_or_bootconfig = NULL;
-int susfs_set_cmdline_or_bootconfig(char* __user user_fake_cmdline_or_bootconfig) {
+int susfs_set_cmdline_or_bootconfig(void __user **arg) {
 	int res;
-
-	user_fake_cmdline_or_bootconfig = (char __user *)susfs_resolve_uptr((void __user *)user_fake_cmdline_or_bootconfig);
+	char* __user user_fake_cmdline_or_bootconfig = (char __user *)susfs_resolve_uptr((void __user *)arg);
 
 	if (!fake_cmdline_or_bootconfig) {
 		// 4096 is enough I guess
@@ -1098,14 +1091,13 @@ out_path_put_target:
 	return err;
 }
 
-int susfs_add_open_redirect(struct st_susfs_open_redirect* __user user_info) {
+int susfs_add_open_redirect(void __user **arg) {
 	struct st_susfs_open_redirect info;
 	struct st_susfs_open_redirect_hlist *new_entry, *tmp_entry;
 	struct hlist_node *tmp_node;
 	int bkt;
 	bool update_hlist = false;
-
-	user_info = (struct st_susfs_open_redirect __user *)susfs_resolve_uptr((void __user *)user_info);
+	struct st_susfs_open_redirect __user *user_info = (struct st_susfs_open_redirect __user *)susfs_resolve_uptr((void __user *)arg);
 
 	if (copy_from_user(&info, user_info, sizeof(info))) {
 		SUSFS_LOGE("failed copying from userspace\n");
@@ -1386,6 +1378,14 @@ void susfs_show_variant(void __user **arg) {
 
 void susfs_start_sdcard_monitor_fn(void) {
 	// Stub for Android 15 crDroid
+}
+
+void susfs_add_sus_map(void __user **arg) {
+	// Stub for non-gki 4.19
+}
+
+int susfs_add_sus_memfd(void __user **arg) {
+	return 0;
 }
 
 /* susfs_init */
