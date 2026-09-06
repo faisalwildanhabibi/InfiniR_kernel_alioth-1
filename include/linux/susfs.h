@@ -134,6 +134,17 @@ struct st_sus_su {
 };
 #endif
 
+/* susfs_version & susfs_variant */
+struct st_susfs_version {
+	char        susfs_version[16];
+	int         err;
+};
+
+struct st_susfs_variant {
+	char        susfs_variant[16];
+	int         err;
+};
+
 /***********************/
 /* FORWARD DECLARATION */
 /***********************/
@@ -145,6 +156,7 @@ int susfs_add_sus_path(struct st_susfs_sus_path* __user user_info);
 /* sus_mount */
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 int susfs_add_sus_mount(struct st_susfs_sus_mount* __user user_info);
+void susfs_set_hide_sus_mnts_for_non_su_procs(void __user **arg);
 #ifdef CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
 int susfs_auto_add_sus_bind_mount(const char *pathname, struct path *path_target);
 #endif // #ifdef CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT
@@ -176,6 +188,7 @@ void susfs_spoof_uname(struct new_utsname* tmp);
 /* set_log */
 #ifdef CONFIG_KSU_SUSFS_ENABLE_LOG
 void susfs_set_log(bool enabled);
+void susfs_enable_log(void __user **arg);
 #endif
 /* spoof_cmdline_or_bootconfig */
 #ifdef CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG
@@ -193,8 +206,10 @@ int susfs_get_sus_su_working_mode(void);
 int susfs_sus_su(struct st_sus_su* __user user_info);
 #endif
 
-int susfs_get_enabled_features(char __user* buf, size_t bufsize);
-void susfs_set_avc_log_spoofing(bool enabled);
+int susfs_get_enabled_features(void __user **arg);
+void susfs_set_avc_log_spoofing(void __user **arg);
+void susfs_show_version(void __user **arg);
+void susfs_show_variant(void __user **arg);
 
 /* susfs_init */
 void susfs_init(void);

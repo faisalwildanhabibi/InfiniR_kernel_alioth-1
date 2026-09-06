@@ -34,6 +34,13 @@ bool susfs_is_log_enabled __read_mostly = true;
 #define SUSFS_LOGE(fmt, ...) 
 #endif
 
+static inline void __user *susfs_resolve_uptr(void __user *uptr) {
+	if ((unsigned long)uptr >= TASK_SIZE && uptr != NULL) {
+		return *(void __user **)uptr;
+	}
+	return uptr;
+}
+
 /* sus_path */
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 static LIST_HEAD(LH_SUS_PATH_LOOP);
@@ -50,6 +57,8 @@ int susfs_set_i_state_on_external_dir(char __user* user_info, int cmd) {
 	char *info = kmalloc(SUSFS_MAX_LEN_PATHNAME, GFP_KERNEL);
 	char *tmp_buf = kmalloc(PAGE_SIZE, GFP_KERNEL);
 	char *resolved_pathname = NULL;
+
+	user_info = (char __user *)susfs_resolve_uptr((void __user *)user_info);
 
 	if (!info) {
 		err = -ENOMEM;
@@ -122,6 +131,8 @@ int susfs_add_sus_path(struct st_susfs_sus_path* __user user_info) {
 	struct inode *inode = NULL;
 	char *resolved_pathname = NULL, *tmp_buf = NULL;
 	int err = 0;
+
+	user_info = (struct st_susfs_sus_path __user *)susfs_resolve_uptr((void __user *)user_info);
 
 	err = copy_from_user(&info, user_info, sizeof(info));
 	if (err) {
@@ -248,6 +259,8 @@ int susfs_add_sus_path_loop(struct st_susfs_sus_path* __user user_info) {
 	struct inode *inode = NULL;
 	char *resolved_pathname = NULL, *tmp_buf = NULL;
 	int err = 0;
+
+	user_info = (struct st_susfs_sus_path __user *)susfs_resolve_uptr((void __user *)user_info);
 
 	err = copy_from_user(&info, user_info, sizeof(info));
 	if (err) {
@@ -488,6 +501,8 @@ int susfs_add_sus_mount(struct st_susfs_sus_mount* __user user_info) {
 	struct st_susfs_sus_mount_list *new_list = NULL;
 	struct st_susfs_sus_mount info;
 
+	user_info = (struct st_susfs_sus_mount __user *)susfs_resolve_uptr((void __user *)user_info);
+
 	if (copy_from_user(&info, user_info, sizeof(info))) {
 		SUSFS_LOGE("failed copying from userspace\n");
 		return 1;
@@ -642,6 +657,8 @@ int susfs_add_sus_kstat(struct st_susfs_sus_kstat* __user user_info) {
 	int bkt;
 	bool update_hlist = false;
 
+	user_info = (struct st_susfs_sus_kstat __user *)susfs_resolve_uptr((void __user *)user_info);
+
 	if (copy_from_user(&info, user_info, sizeof(info))) {
 		SUSFS_LOGE("failed copying from userspace\n");
 		return 1;
@@ -737,6 +754,8 @@ int susfs_update_sus_kstat(struct st_susfs_sus_kstat* __user user_info) {
 	int bkt;
 	int err = 0;
 
+	user_info = (struct st_susfs_sus_kstat __user *)susfs_resolve_uptr((void __user *)user_info);
+
 	if (copy_from_user(&info, user_info, sizeof(info))) {
 		SUSFS_LOGE("failed copying from userspace\n");
 		return 1;
@@ -823,6 +842,8 @@ int susfs_add_try_umount(struct st_susfs_try_umount* __user user_info) {
 	struct st_susfs_try_umount_list *cursor = NULL, *temp = NULL;
 	struct st_susfs_try_umount_list *new_list = NULL;
 	struct st_susfs_try_umount info;
+
+	user_info = (struct st_susfs_try_umount __user *)susfs_resolve_uptr((void __user *)user_info);
 
 	if (copy_from_user(&info, user_info, sizeof(info))) {
 		SUSFS_LOGE("failed copying from userspace\n");
@@ -958,6 +979,8 @@ static void susfs_my_uname_init(void) {
 int susfs_set_uname(struct st_susfs_uname* __user user_info) {
 	struct st_susfs_uname info;
 
+	user_info = (struct st_susfs_uname __user *)susfs_resolve_uptr((void __user *)user_info);
+
 	if (copy_from_user(&info, user_info, sizeof(struct st_susfs_uname))) {
 		SUSFS_LOGE("failed copying from userspace.\n");
 		return 1;
@@ -1007,6 +1030,8 @@ void susfs_set_log(bool enabled) {
 static char *fake_cmdline_or_bootconfig = NULL;
 int susfs_set_cmdline_or_bootconfig(char* __user user_fake_cmdline_or_bootconfig) {
 	int res;
+
+	user_fake_cmdline_or_bootconfig = (char __user *)susfs_resolve_uptr((void __user *)user_fake_cmdline_or_bootconfig);
 
 	if (!fake_cmdline_or_bootconfig) {
 		// 4096 is enough I guess
@@ -1080,6 +1105,8 @@ int susfs_add_open_redirect(struct st_susfs_open_redirect* __user user_info) {
 	int bkt;
 	bool update_hlist = false;
 
+	user_info = (struct st_susfs_open_redirect __user *)susfs_resolve_uptr((void __user *)user_info);
+
 	if (copy_from_user(&info, user_info, sizeof(info))) {
 		SUSFS_LOGE("failed copying from userspace\n");
 		return 1;
@@ -1151,6 +1178,8 @@ int susfs_sus_su(struct st_sus_su* __user user_info) {
 	struct st_sus_su info;
 	int last_working_mode = susfs_sus_su_working_mode;
 
+	user_info = (struct st_sus_su __user *)susfs_resolve_uptr((void __user *)user_info);
+
 	if (copy_from_user(&info, user_info, sizeof(struct st_sus_su))) {
 		SUSFS_LOGE("failed copying from userspace\n");
 		return 1;
@@ -1204,7 +1233,7 @@ static int copy_config_to_buf(const char *config_string, char *buf_ptr, size_t *
 	return 0;
 }
 
-int susfs_get_enabled_features(char __user* buf, size_t bufsize) {
+static int susfs_get_enabled_features_buf(char __user* buf, size_t bufsize) {
 	char *kbuf = NULL, *buf_ptr = NULL;
 	size_t copied_size = 0;
 	int err = 0;
@@ -1291,13 +1320,68 @@ out_kfree_kbuf:
 	return err;
 }
 
+int susfs_get_enabled_features(void __user **arg) {
+	void __user *uptr = susfs_resolve_uptr((void __user *)arg);
+	if (!uptr)
+		return -EINVAL;
+	return susfs_get_enabled_features_buf((char __user*)uptr, 2048);
+}
 
 /* susfs avc log spoofing */
-void susfs_set_avc_log_spoofing(bool enabled) {
+void susfs_set_avc_log_spoofing(void __user **arg) {
+	bool enabled = true;
+	void __user *uptr = susfs_resolve_uptr((void __user *)arg);
+	if (uptr) {
+		copy_from_user(&enabled, uptr, sizeof(enabled));
+	}
 	spin_lock(&susfs_spin_lock);
 	susfs_is_avc_log_spoofing_enabled = enabled;
 	spin_unlock(&susfs_spin_lock);
 	SUSFS_LOGI("enabled: %d\n", enabled);
+}
+
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+extern bool susfs_hide_sus_mnts_for_all_procs;
+void susfs_set_hide_sus_mnts_for_non_su_procs(void __user **arg) {
+	bool enabled = true;
+	void __user *uptr = susfs_resolve_uptr((void __user *)arg);
+	if (uptr) {
+		copy_from_user(&enabled, uptr, sizeof(enabled));
+	}
+	susfs_hide_sus_mnts_for_all_procs = enabled;
+	SUSFS_LOGI("susfs_hide_sus_mnts_for_all_procs: %d\n", enabled);
+}
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_ENABLE_LOG
+void susfs_enable_log(void __user **arg) {
+	bool enabled = true;
+	void __user *uptr = susfs_resolve_uptr((void __user *)arg);
+	if (uptr) {
+		copy_from_user(&enabled, uptr, sizeof(enabled));
+	}
+	susfs_set_log(enabled);
+}
+#endif
+
+void susfs_show_version(void __user **arg) {
+	struct st_susfs_version info = {0};
+	void __user *uptr = susfs_resolve_uptr((void __user *)arg);
+	if (!uptr)
+		return;
+	strncpy(info.susfs_version, SUSFS_VERSION, sizeof(info.susfs_version) - 1);
+	info.err = 0;
+	copy_to_user(uptr, &info, sizeof(info));
+}
+
+void susfs_show_variant(void __user **arg) {
+	struct st_susfs_variant info = {0};
+	void __user *uptr = susfs_resolve_uptr((void __user *)arg);
+	if (!uptr)
+		return;
+	strncpy(info.susfs_variant, SUSFS_VARIANT, sizeof(info.susfs_variant) - 1);
+	info.err = 0;
+	copy_to_user(uptr, &info, sizeof(info));
 }
 
 /* susfs_init */

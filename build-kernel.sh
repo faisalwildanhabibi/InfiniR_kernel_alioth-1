@@ -10,11 +10,11 @@ KERNEL_DIR="$(pwd)"
 OUT_DIR="${KERNEL_DIR}/out"
 CLANG_DIR="${KERNEL_DIR}/clang"
 ANYKERNEL_DIR="${KERNEL_DIR}/AnyKernel3"
-ZIP_NAME="InfiniR_Alioth_v3.00_KSUN_GoRhanHee_crDroid11.17.zip"
+ZIP_NAME="InfiniR_Alioth_v3.00_KSUN_v3.2_SuSFS_v2_crDroid11.17.zip"
 
 export ARCH=arm64
 export SUBARCH=arm64
-export KBUILD_BUILD_USER="raystef66-GoRhanHee"
+export KBUILD_BUILD_USER="raystef66-sidex15"
 export KBUILD_BUILD_HOST="crDroid-Local"
 
 echo "=== Preparing Build Environment ==="
@@ -30,11 +30,11 @@ fi
 
 export PATH="${CLANG_DIR}/bin:$PATH"
 
-# Unshallow KernelSU-Next to restore full commit history (2630 commits)
+# Unshallow KernelSU-Next to restore full commit history (3015 commits)
 echo "Unshallowing KernelSU-Next submodule..."
 git -C KernelSU-Next fetch --unshallow 2>/dev/null || true
-KSU_COUNT=$(git -C KernelSU-Next rev-list --count HEAD 2>/dev/null || echo "2630")
-[ "$KSU_COUNT" -lt 2600 ] && KSU_COUNT=2630
+KSU_COUNT=$(git -C KernelSU-Next rev-list --count HEAD 2>/dev/null || echo "3015")
+[ "$KSU_COUNT" -lt 3000 ] && KSU_COUNT=3015
 echo "KernelSU-Next commit count: $KSU_COUNT"
 
 echo "=== Configuring alioth_defconfig ==="

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - v3.00-ksun-gorhanhee
+      - v3.00-ksun-v3-legacy-susfs-v2
 
 jobs:
   build:
@@ -51,14 +51,14 @@ jobs:
           export PATH="$(pwd)/clang/bin:$PATH"
           export ARCH=arm64
           export SUBARCH=arm64
-          export KBUILD_BUILD_USER="raystef66-GoRhanHee"
+          export KBUILD_BUILD_USER="raystef66-sidex15"
           export KBUILD_BUILD_HOST="crDroid-CI"
 
-          # Unshallow KernelSU-Next to restore full commit history (2630 commits)
+          # Unshallow KernelSU-Next to restore full commit history (3015 commits)
           echo "Unshallowing KernelSU-Next submodule..."
           git -C KernelSU-Next fetch --unshallow || true
-          KSU_COUNT=$(git -C KernelSU-Next rev-list --count HEAD 2>/dev/null || echo "2630")
-          [ "$KSU_COUNT" -lt 2600 ] && KSU_COUNT=2630
+          KSU_COUNT=$(git -C KernelSU-Next rev-list --count HEAD 2>/dev/null || echo "3015")
+          [ "$KSU_COUNT" -lt 3000 ] && KSU_COUNT=3015
           echo "KernelSU-Next commit count: $KSU_COUNT"
 
           mkdir -p out
@@ -90,7 +90,7 @@ jobs:
           fi
 
           cd AnyKernel3
-          ZIP_NAME="InfiniR_Alioth_v3.00_KSUN_GoRhanHee_crDroid11.17.zip"
+          ZIP_NAME="InfiniR_Alioth_v3.00_KSUN_v3.2_SuSFS_v2_crDroid11.17.zip"
           zip -r9 "../$ZIP_NAME" * -x .git .github README.md
           cd ..
 
@@ -100,6 +100,6 @@ jobs:
       - name: Upload AnyKernel3 Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: InfiniR_Alioth_v3.00_KSUN_crDroid11.17
-          path: InfiniR_Alioth_v3.00_KSUN_GoRhanHee_crDroid11.17.zip
+          name: InfiniR_Alioth_v3.00_KSUN_v3.2_SuSFS_v2_crDroid11.17
+          path: InfiniR_Alioth_v3.00_KSUN_v3.2_SuSFS_v2_crDroid11.17.zip
           if-no-files-found: error

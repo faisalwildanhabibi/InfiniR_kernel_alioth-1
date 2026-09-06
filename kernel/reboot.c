@@ -309,6 +309,10 @@ EXPORT_SYMBOL_GPL(kernel_power_off);
 
 DEFINE_MUTEX(system_transition_mutex);
 
+#if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU)
+extern int ksu_handle_sys_reboot(int magic1, int magic2, unsigned int cmd, void __user **arg);
+#endif
+
 /*
  * Reboot system call: for obvious reasons only root may call it,
  * and even root needs to set up some magic numbers in the registers
@@ -323,6 +327,13 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
 	struct pid_namespace *pid_ns = task_active_pid_ns(current);
 	char buffer[256];
 	int ret = 0;
+
+#if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU)
+	if (magic1 == 0xDEADBEEF) {
+		ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
+		return 0;
+	}
+#endif
 
 	if (check_poweroff_charger_mode()){
 		pr_warn("poweroff charging skip this detect\n");
