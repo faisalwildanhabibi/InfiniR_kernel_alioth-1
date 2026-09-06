@@ -30,6 +30,13 @@ fi
 
 export PATH="${CLANG_DIR}/bin:$PATH"
 
+# Unshallow KernelSU-Next to restore full commit history (2630 commits)
+echo "Unshallowing KernelSU-Next submodule..."
+git -C KernelSU-Next fetch --unshallow 2>/dev/null || true
+KSU_COUNT=$(git -C KernelSU-Next rev-list --count HEAD 2>/dev/null || echo "2630")
+[ "$KSU_COUNT" -lt 2600 ] && KSU_COUNT=2630
+echo "KernelSU-Next commit count: $KSU_COUNT"
+
 echo "=== Configuring alioth_defconfig ==="
 make -j$(nproc --all) O="${OUT_DIR}" ARCH=arm64 alioth_defconfig
 
@@ -39,6 +46,7 @@ make -j$(nproc --all) O="${OUT_DIR}" \
     CC=clang \
     LLVM=1 \
     LLVM_IAS=1 \
+    KSU_GIT_VERSION="$KSU_COUNT" \
     CLANG_TRIPLE=aarch64-linux-gnu- \
     CROSS_COMPILE=aarch64-linux-gnu- \
     CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
