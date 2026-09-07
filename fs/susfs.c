@@ -180,8 +180,10 @@ int susfs_add_sus_path(void __user **arg) {
 		list_for_each_entry_safe(cursor, temp, &LH_SUS_PATH_ANDROID_DATA, list) {
 			if (unlikely(!strcmp(cursor->info.target_pathname, path.dentry->d_name.name))) {
 				spin_lock(&susfs_spin_lock);
+				cursor->info.target_ino = inode->i_ino;
 				strncpy(cursor->info.target_pathname, path.dentry->d_name.name, SUSFS_MAX_LEN_PATHNAME - 1);
 				strncpy(cursor->target_pathname, resolved_pathname, SUSFS_MAX_LEN_PATHNAME - 1);
+				cursor->info.i_uid = inode->i_uid.val;
 				cursor->path_len = strlen(cursor->info.target_pathname);
 				SUSFS_LOGI("target_pathname: '%s', is successfully updated to LH_SUS_PATH_ANDROID_DATA\n",
 							cursor->info.target_pathname);
@@ -194,8 +196,10 @@ int susfs_add_sus_path(void __user **arg) {
 			err = -ENOMEM;
 			goto out_kfree_tmp_buf;
 		}
+		new_list->info.target_ino = inode->i_ino;
 		strncpy(new_list->info.target_pathname, path.dentry->d_name.name, SUSFS_MAX_LEN_PATHNAME - 1);
 		strncpy(new_list->target_pathname, resolved_pathname, SUSFS_MAX_LEN_PATHNAME - 1);
+		new_list->info.i_uid = inode->i_uid.val;
 		new_list->path_len = strlen(new_list->info.target_pathname);
 		INIT_LIST_HEAD(&new_list->list);
 		spin_lock(&susfs_spin_lock);
@@ -213,8 +217,10 @@ int susfs_add_sus_path(void __user **arg) {
 		list_for_each_entry_safe(cursor, temp, &LH_SUS_PATH_SDCARD, list) {
 			if (unlikely(!strcmp(cursor->info.target_pathname, path.dentry->d_name.name))) {
 				spin_lock(&susfs_spin_lock);
+				cursor->info.target_ino = inode->i_ino;
 				strncpy(cursor->info.target_pathname, path.dentry->d_name.name, SUSFS_MAX_LEN_PATHNAME - 1);
 				strncpy(cursor->target_pathname, resolved_pathname, SUSFS_MAX_LEN_PATHNAME - 1);
+				cursor->info.i_uid = inode->i_uid.val;
 				cursor->path_len = strlen(cursor->info.target_pathname);
 				SUSFS_LOGI("target_pathname: '%s', is successfully updated to LH_SUS_PATH_SDCARD\n",
 							cursor->info.target_pathname);
@@ -227,8 +233,10 @@ int susfs_add_sus_path(void __user **arg) {
 			err = -ENOMEM;
 			goto out_kfree_tmp_buf;
 		}
+		new_list->info.target_ino = inode->i_ino;
 		strncpy(new_list->info.target_pathname, path.dentry->d_name.name, SUSFS_MAX_LEN_PATHNAME - 1);
 		strncpy(new_list->target_pathname, resolved_pathname, SUSFS_MAX_LEN_PATHNAME - 1);
+		new_list->info.i_uid = inode->i_uid.val;
 		new_list->path_len = strlen(new_list->info.target_pathname);
 		INIT_LIST_HEAD(&new_list->list);
 		spin_lock(&susfs_spin_lock);
@@ -306,8 +314,10 @@ int susfs_add_sus_path_loop(void __user **arg) {
 	list_for_each_entry_safe(cursor, temp, &LH_SUS_PATH_LOOP, list) {
 		if (unlikely(!strcmp(cursor->info.target_pathname, resolved_pathname))) {
 			spin_lock(&susfs_spin_lock);
+			cursor->info.target_ino = inode->i_ino;
 			strncpy(cursor->info.target_pathname, resolved_pathname, SUSFS_MAX_LEN_PATHNAME - 1);
 			strncpy(cursor->target_pathname, resolved_pathname, SUSFS_MAX_LEN_PATHNAME - 1);
+			cursor->info.i_uid = inode->i_uid.val;
 			cursor->path_len = strlen(cursor->info.target_pathname);
 			SUSFS_LOGI("target_pathname: '%s', is successfully updated to LH_SUS_PATH_LOOP\n",
 						cursor->target_pathname);
@@ -320,8 +330,10 @@ int susfs_add_sus_path_loop(void __user **arg) {
 		err = -ENOMEM;
 		goto out_kfree_tmp_buf_loop;
 	}
+	new_list->info.target_ino = inode->i_ino;
 	strncpy(new_list->info.target_pathname, resolved_pathname, SUSFS_MAX_LEN_PATHNAME - 1);
 	strncpy(new_list->target_pathname, resolved_pathname, SUSFS_MAX_LEN_PATHNAME - 1);
+	new_list->info.i_uid = inode->i_uid.val;
 	new_list->path_len = strlen(new_list->info.target_pathname);
 	INIT_LIST_HEAD(&new_list->list);
 	spin_lock(&susfs_spin_lock);
