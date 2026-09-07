@@ -158,6 +158,7 @@ struct st_susfs_spoof_cmdline_or_bootconfig {
 /* open_redirect */
 #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 struct st_susfs_open_redirect {
+	unsigned long                    target_ino;
 	char                             target_pathname[SUSFS_MAX_LEN_PATHNAME];
 	char                             redirected_pathname[SUSFS_MAX_LEN_PATHNAME];
 	int                              uid_scheme;
