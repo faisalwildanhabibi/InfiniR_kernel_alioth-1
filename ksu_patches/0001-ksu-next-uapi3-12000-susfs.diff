@@ -53,6 +53,27 @@ index a996d2ff..7a9eca05 100644
  
  #define KERNEL_SU_VERSION KSU_VERSION
  #define KERNEL_SU_VERSION_TAG KSU_VERSION_TAG
+diff --git a/kernel/manager/manager_identity.h b/kernel/manager/manager_identity.h
+index ca3f80a7..3fe6d250 100644
+--- a/kernel/manager/manager_identity.h
++++ b/kernel/manager/manager_identity.h
+@@ -46,12 +46,14 @@ static inline bool ksu_is_manager_appid_valid()
+ 
+ static inline bool is_manager()
+ {
+-	return unlikely(ksu_manager_appid == current_uid().val % KSU_PER_USER_RANGE);
++	return unlikely(ksu_is_manager_appid_valid() &&
++			ksu_manager_appid == current_uid().val % KSU_PER_USER_RANGE);
+ }
+ 
+ static inline bool is_uid_manager(uid_t uid)
+ {
+-    return unlikely(ksu_manager_appid == uid % KSU_PER_USER_RANGE);
++	return unlikely(ksu_is_manager_appid_valid() &&
++			ksu_manager_appid == uid % KSU_PER_USER_RANGE);
+ }
+ 
+ static inline uid_t ksu_get_manager_appid()
 diff --git a/kernel/supercall/dispatch.c b/kernel/supercall/dispatch.c
 index 6fe1357e..2a22b664 100644
 --- a/kernel/supercall/dispatch.c
