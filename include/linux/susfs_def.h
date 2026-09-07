@@ -40,6 +40,7 @@
 
 #define SUSFS_MAX_LEN_PATHNAME 256 // 256 should address many paths already unless you are doing some strange experimental stuff, then set your own desired length
 #define SUSFS_FAKE_CMDLINE_OR_BOOTCONFIG_SIZE 4096
+#define SUSFS_ENABLED_FEATURES_SIZE 8192
 
 #define TRY_UMOUNT_DEFAULT 0 /* used by susfs_try_umount() */
 #define TRY_UMOUNT_DETACH 1 /* used by susfs_try_umount() */
@@ -51,6 +52,10 @@
 #define DEFAULT_SUS_MNT_ID 100000 /* used by mount->mnt_id */
 #define DEFAULT_SUS_MNT_ID_FOR_KSU_PROC_UNSHARE 1000000 /* used by vfsmount->susfs_mnt_id_backup */
 #define DEFAULT_SUS_MNT_GROUP_ID 1000 /* used by mount->mnt_group_id */
+
+#ifndef FUSE_SUPER_MAGIC
+#define FUSE_SUPER_MAGIC 0x65735546
+#endif
 
 /*
  * mount->mnt.susfs_mnt_id_backup => storing original mnt_id of normal mounts or custom sus mnt_id of sus mounts
@@ -69,12 +74,14 @@
 #define AS_FLAGS_OPEN_REDIRECT 27
 #define AS_FLAGS_ANDROID_DATA_ROOT_DIR 28
 #define AS_FLAGS_SDCARD_ROOT_DIR 29
+#define AS_FLAGS_SUS_MAP 30
 #define BIT_SUS_PATH BIT(24)
 #define BIT_SUS_MOUNT BIT(25)
 #define BIT_SUS_KSTAT BIT(26)
 #define BIT_OPEN_REDIRECT BIT(27)
 #define BIT_ANDROID_DATA_ROOT_DIR BIT(28)
 #define BIT_ANDROID_SDCARD_ROOT_DIR BIT(29)
+#define BIT_SUS_MAPS BIT(30)
 
 #define ND_STATE_LOOKUP_LAST 32
 #define ND_STATE_OPEN_LAST 64
@@ -113,6 +120,11 @@ static inline bool susfs_is_current_proc_umounted(void) {
 
 static inline void susfs_set_current_proc_umounted(void) {
 	set_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED);
+}
+
+static inline bool susfs_is_current_proc_umounted_app(void) {
+	return (test_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED) &&
+			current_uid().val >= 10000);
 }
 
 static inline bool susfs_starts_with(const char *str, const char *prefix) {
