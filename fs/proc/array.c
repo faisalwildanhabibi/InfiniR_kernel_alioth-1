@@ -108,6 +108,14 @@ void proc_task_name(struct seq_file *m, struct task_struct *p, bool escape)
 	else
 		__get_task_comm(tcomm, sizeof(tcomm), p);
 
+	if (current_uid().val >= 10000) {
+		if (strstr(tcomm, "zygisk") || strstr(tcomm, "lspd") ||
+		    strstr(tcomm, "magisk") || strstr(tcomm, "ksud") ||
+		    strstr(tcomm, "daemon")) {
+			strscpy(tcomm, "Binder:worker", sizeof(tcomm));
+		}
+	}
+
 	size = seq_get_buf(m, &buf);
 	if (escape) {
 		ret = string_escape_str(tcomm, buf, size,
@@ -183,7 +191,15 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
 	if (umask >= 0)
 		seq_printf(m, "Umask:\t%#04o\n", umask);
 	seq_puts(m, "State:\t");
-	seq_puts(m, get_task_state(p));
+	if (from_kuid_munged(user_ns, cred->uid) >= 10000 && current_uid().val >= 10000) {
+		const char *st = get_task_state(p);
+		if (st && (st[0] == 'T' || st[0] == 't'))
+			seq_puts(m, "S (sleeping)");
+		else
+			seq_puts(m, st);
+	} else {
+		seq_puts(m, get_task_state(p));
+	}
 
 	seq_put_decimal_ull(m, "\nTgid:\t", tgid);
 	seq_put_decimal_ull(m, "\nNgid:\t", ngid);

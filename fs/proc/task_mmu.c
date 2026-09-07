@@ -20,13 +20,8 @@
 #include <linux/uaccess.h>
 #include <linux/pkeys.h>
 #include <linux/mm_inline.h>
-#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 #include <linux/susfs_def.h>
-#endif
-
-#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-#include <linux/susfs_def.h>
-#endif
+#include <linux/cred.h>
 
 #include <asm/elf.h>
 #include <asm/tlb.h>
@@ -501,6 +496,38 @@ static int show_vma_header_prefix(struct seq_file *m, unsigned long start,
 extern void susfs_sus_ino_for_show_map_vma(unsigned long ino, dev_t *out_dev, unsigned long *out_ino);
 #endif
 
+static bool susfs_is_vma_suspicious(struct vm_area_struct *vma)
+{
+	struct file *file;
+	struct inode *inode;
+
+	if (likely(current_uid().val < 10000 && !susfs_is_current_proc_umounted_app()))
+		return false;
+
+	file = vma->vm_file;
+	if (file) {
+		inode = file_inode(file);
+		if (unlikely(inode && (inode->i_mapping->flags & BIT_SUS_PATH)))
+			return true;
+		if (file->f_path.dentry) {
+			const char *dname = file->f_path.dentry->d_name.name;
+			if (dname && (strstr(dname, "zygisk") || strstr(dname, "lspd") ||
+				      strstr(dname, "magisk") || strstr(dname, "libriru") ||
+				      strstr(dname, "memfd:zygisk") || strstr(dname, "memfd:lspd")))
+				return true;
+		}
+	} else {
+		if (vma->vm_ops && vma->vm_ops->name) {
+			const char *name = vma->vm_ops->name(vma);
+			if (name && (strstr(name, "zygisk") || strstr(name, "lspd") ||
+				      strstr(name, "magisk") || strstr(name, "memfd:zygisk") ||
+				      strstr(name, "memfd:lspd")))
+				return true;
+		}
+	}
+	return false;
+}
+
 static void
 show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
 {
@@ -512,6 +539,12 @@ show_map_vma(struct seq_file *m, struct vm_area_struct *vma)
 	unsigned long start, end;
 	dev_t dev = 0;
 	const char *name = NULL;
+	size_t prev_count;
+
+	if (susfs_is_vma_suspicious(vma))
+		return;
+
+	prev_count = m->count;
 
 	if (file) {
 		struct inode *inode = file_inode(vma->vm_file);
@@ -552,6 +585,16 @@ bypass_orig_flow:
 			p = d_path(&file->f_path, buf, size);
 			if (!IS_ERR(p)) {
 				size_t len;
+
+				if (unlikely(current_uid().val >= 10000 || susfs_is_current_proc_umounted_app())) {
+					if (strstr(p, "/data/adb") || strstr(p, "zygisk") ||
+					    strstr(p, "lspd") || strstr(p, "magisk") ||
+					    strstr(p, "/modules/") || strstr(p, "libriru") ||
+					    (strstr(p, " (deleted)") && strstr(p, "/data/"))) {
+						m->count = prev_count;
+						return;
+					}
+				}
 
 				/* Minus one to exclude the NUL character */
 				len = size - (p - buf) - 1;
@@ -1034,12 +1077,18 @@ static int show_smap(struct seq_file *m, void *v)
 {
 	struct vm_area_struct *vma = v;
 	struct mem_size_stats mss;
+	size_t prev_count = m->count;
+
+	if (susfs_is_vma_suspicious(vma))
+		return 0;
 
 	memset(&mss, 0, sizeof(mss));
 
 	smap_gather_stats(vma, &mss);
 
 	show_map_vma(m, vma);
+	if (m->count == prev_count)
+		return 0;
 	if (vma_get_anon_name(vma)) {
 		seq_puts(m, "Name:           ");
 		seq_print_vma_name(m, vma);

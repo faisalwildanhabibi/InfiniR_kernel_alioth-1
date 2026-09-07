@@ -403,6 +403,9 @@ static int proc_pid_wchan(struct seq_file *m, struct pid_namespace *ns,
 	unsigned long wchan;
 	char symname[KSYM_NAME_LEN];
 
+	if (current_uid().val >= 10000)
+		goto print0;
+
 	if (!ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS))
 		goto print0;
 
