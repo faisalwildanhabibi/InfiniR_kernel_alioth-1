@@ -40,7 +40,7 @@
 #define CMD_SUSFS_ADD_SUS_MEMFD 0x60030
 
 #define SUSFS_MAX_LEN_PATHNAME 256 // 256 should address many paths already unless you are doing some strange experimental stuff, then set your own desired length
-#define SUSFS_FAKE_CMDLINE_OR_BOOTCONFIG_SIZE 4096
+#define SUSFS_FAKE_CMDLINE_OR_BOOTCONFIG_SIZE 8192
 #define SUSFS_ENABLED_FEATURES_SIZE 8192
 
 #define TRY_UMOUNT_DEFAULT 0 /* used by susfs_try_umount() */
@@ -95,22 +95,6 @@
 #define DATA_ADB_NO_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT "/data/adb/susfs_no_auto_add_sus_ksu_default_mount"
 #define DATA_ADB_NO_AUTO_ADD_TRY_UMOUNT_FOR_BIND_MOUNT "/data/adb/susfs_no_auto_add_try_umount_for_bind_mount"
 
-static inline bool susfs_is_current_non_root_user_app_proc(void) {
-	return test_ti_thread_flag(&current->thread_info, TIF_NON_ROOT_USER_APP_PROC);
-}
-
-static inline void susfs_set_current_non_root_user_app_proc(void) {
-	set_ti_thread_flag(&current->thread_info, TIF_NON_ROOT_USER_APP_PROC);
-}
-
-static inline bool susfs_is_current_proc_su_not_allowed(void) {
-	return test_ti_thread_flag(&current->thread_info, TIF_PROC_SU_NOT_ALLOWED);
-}
-
-static inline void susfs_set_current_proc_su_not_allowed(void) {
-	set_ti_thread_flag(&current->thread_info, TIF_PROC_SU_NOT_ALLOWED);
-}
-
 #ifndef TIF_PROC_UMOUNTED
 #define TIF_PROC_UMOUNTED 35
 #endif
@@ -126,6 +110,22 @@ static inline void susfs_set_current_proc_umounted(void) {
 static inline bool susfs_is_current_proc_umounted_app(void) {
 	return (test_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED) &&
 			current_uid().val >= 10000);
+}
+
+static inline bool susfs_is_current_non_root_user_app_proc(void) {
+	return susfs_is_current_proc_umounted_app();
+}
+
+static inline void susfs_set_current_non_root_user_app_proc(void) {
+	susfs_set_current_proc_umounted();
+}
+
+static inline bool susfs_is_current_proc_su_not_allowed(void) {
+	return test_ti_thread_flag(&current->thread_info, TIF_PROC_SU_NOT_ALLOWED);
+}
+
+static inline void susfs_set_current_proc_su_not_allowed(void) {
+	set_ti_thread_flag(&current->thread_info, TIF_PROC_SU_NOT_ALLOWED);
 }
 
 static inline bool susfs_starts_with(const char *str, const char *prefix) {
