@@ -2,6 +2,7 @@
 #define KSU_SUSFS_DEF_H
 
 #include <linux/bits.h>
+#include <linux/cred.h>
 
 #ifndef SUSFS_MAGIC
 #define SUSFS_MAGIC 0xFAFAFAFA
