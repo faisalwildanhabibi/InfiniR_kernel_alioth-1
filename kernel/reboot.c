@@ -330,8 +330,11 @@ SYSCALL_DEFINE4(reboot, int, magic1, int, magic2, unsigned int, cmd,
 
 #if defined(CONFIG_KSU_MANUAL_HOOK) || defined(CONFIG_KSU)
 	if (magic1 == 0xDEADBEEF) {
-		ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
-		return 0;
+		ret = ksu_handle_sys_reboot(magic1, magic2, cmd, &arg);
+		if (ret == 0)
+			return 0;
+		if (ret == -EPERM)
+			return -EPERM;
 	}
 #endif
 
