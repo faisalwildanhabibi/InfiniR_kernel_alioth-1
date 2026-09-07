@@ -60,6 +60,7 @@
 #include <linux/oom.h>
 #include <linux/kmod.h>
 #include <linux/capability.h>
+#include <linux/cred.h>
 #include <linux/binfmts.h>
 #include <linux/sched/sysctl.h>
 #include <linux/sched/coredump.h>
@@ -3005,6 +3006,10 @@ static int proc_taint(struct ctl_table *table, int write,
 
 	if (write && !capable(CAP_SYS_ADMIN))
 		return -EPERM;
+
+	if (!write && current_uid().val >= 10000) {
+		tmptaint = 0;
+	}
 
 	t = *table;
 	t.data = &tmptaint;

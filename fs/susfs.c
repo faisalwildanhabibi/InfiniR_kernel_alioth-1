@@ -1497,6 +1497,48 @@ static void susfs_run_extra_works(struct work_struct *work) {
 		return;
 }
 
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+void susfs_init_builtin_sus_paths(void) {
+	static const char *const default_sus_paths[] = {
+		"/system/bin/su",
+		"/system/xbin/su",
+		"/vendor/bin/su",
+		"/product/bin/su",
+		"/system_ext/bin/su",
+		"/sbin/su",
+		"/data/local/tmp/su",
+		"/data/local/bin/su",
+		"/data/local/xbin/su",
+		"/system/addon.d",
+		"/system_ext/addon.d",
+		"/system/etc/init/init.lineage.rc",
+		"/system/etc/init/init.crdroid.rc",
+		"/vendor/etc/init/init.lineage.rc",
+		"/vendor/etc/init/init.crdroid.rc",
+		"/dev/com.topjohnwu.magisk.daemon",
+		"/data/adb",
+	};
+	struct path path;
+	struct inode *inode;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(default_sus_paths); i++) {
+		if (kern_path(default_sus_paths[i], 0, &path) == 0) {
+			if (path.dentry && path.dentry->d_inode) {
+				inode = d_inode(path.dentry);
+				spin_lock(&inode->i_lock);
+				set_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags);
+				spin_unlock(&inode->i_lock);
+				SUSFS_LOGI("native builtin sus_path flagged: %s (ino: %lu)\n",
+					default_sus_paths[i], inode->i_ino);
+			}
+			path_put(&path);
+		}
+	}
+}
+EXPORT_SYMBOL_GPL(susfs_init_builtin_sus_paths);
+#endif
+
 /* susfs_init */
 void susfs_init(void) {
 	spin_lock_init(&susfs_spin_lock);

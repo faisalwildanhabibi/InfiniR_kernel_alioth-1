@@ -1,10 +1,10 @@
-	1	# AnyKernel3 Ramdisk Mod Script
+# AnyKernel3 Ramdisk Mod Script
 # osm0sis @ xda-developers
 
 ## AnyKernel setup
 # begin properties
 properties() { '
-kernel.string=InfiniR Kernel by raystef66
+kernel.string=POCO F3 Snapdragon 870 Performance Kernel
 do.devicecheck=1
 do.modules=0
 do.systemless=1

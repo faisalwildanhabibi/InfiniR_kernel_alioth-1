@@ -10,12 +10,12 @@ KERNEL_DIR="$(pwd)"
 OUT_DIR="${KERNEL_DIR}/out"
 CLANG_DIR="${KERNEL_DIR}/clang"
 ANYKERNEL_DIR="${KERNEL_DIR}/AnyKernel3"
-ZIP_NAME="InfiniR_Alioth_v3.00_KSUN_v3.2_SuSFS_v2_crDroid11.17.zip"
+ZIP_NAME="POCO_F3_Alioth_Kernel_v3.00_KSUN12000_UAPI3_SuSFS_crDroid11.17.zip"
 
 export ARCH=arm64
 export SUBARCH=arm64
-export KBUILD_BUILD_USER="raystef66-sidex15"
-export KBUILD_BUILD_HOST="crDroid-Local"
+export KBUILD_BUILD_USER="builder"
+export KBUILD_BUILD_HOST="c5-build-opt-arm-067"
 
 echo "=== Preparing Build Environment ==="
 mkdir -p "${OUT_DIR}"
@@ -36,6 +36,10 @@ git -C KernelSU-Next fetch --unshallow 2>/dev/null || true
 KSU_COUNT=$(git -C KernelSU-Next rev-list --count HEAD 2>/dev/null || echo "3015")
 [ "$KSU_COUNT" -lt 3000 ] && KSU_COUNT=3015
 echo "KernelSU-Next commit count: $KSU_COUNT"
+
+# Apply KSUN UAPI3 + KSU 12000 + SuSFS patch to KernelSU-Next
+echo "Applying custom KernelSU-Next patches..."
+git -C KernelSU-Next apply --ignore-whitespace "${KERNEL_DIR}/ksu_patches/0001-ksu-next-uapi3-12000-susfs.diff" 2>/dev/null || true
 
 echo "=== Configuring alioth_defconfig ==="
 make -j$(nproc --all) O="${OUT_DIR}" ARCH=arm64 alioth_defconfig

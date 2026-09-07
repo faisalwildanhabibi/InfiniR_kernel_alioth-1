@@ -1,0 +1,84 @@
+diff --git a/kernel/Kbuild b/kernel/Kbuild
+index e6f91995..33627854 100644
+--- a/kernel/Kbuild
++++ b/kernel/Kbuild
+@@ -85,30 +85,14 @@ $(info -- KernelSU-Next Git repo detected at: $(GIT_ROOT))
+ endif
+ endif
+ 
+-# Calculate version if git version is available
+-ifdef KSU_GIT_VERSION_VALID
+-# ksu_version: major * 30000 + git version for historical reasons
+-$(eval KSU_VERSION=$(shell expr 30000 + $(KSU_GIT_VERSION) + 200))
++# Calculate version: set to 12000 for upstream compatibility (Shamiko <= 20000 and KSUN Manager >= 10940)
++KSU_VERSION ?= 12000
+ $(info -- KernelSU-Next version: $(KSU_VERSION))
+ ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
+-else
+-# If there is no .git directory, use default version
+-$(warning "KSU_GIT_VERSION not defined! It is better to make KernelSU-Next a git repository!")
+-KSU_VERSION_FALLBACK := 1
+-$(info -- KernelSU-Next version fallback: $(KSU_VERSION_FALLBACK))
+-ccflags-y += -DKSU_VERSION=$(KSU_VERSION_FALLBACK)
+-endif
+ 
+-ifdef KSU_GIT_VERSION_VALID
+-$(eval KSU_VERSION_TAG=$(KSU_GIT_TAG))
++KSU_VERSION_TAG ?= v1.0.5
+ $(info -- KernelSU-Next tag: $(KSU_VERSION_TAG))
+ ccflags-y += -DKSU_VERSION_TAG=\"$(KSU_VERSION_TAG)\"
+-else
+-$(warning "KSU_VERSION_TAG not defined! It is better to make KernelSU-Next a git submodule!")
+-KSU_VERSION_TAG_FALLBACK := v0.0.1
+-$(info -- KernelSU-Next tag fallback: $(KSU_VERSION_TAG_FALLBACK))
+-ccflags-y += -DKSU_VERSION_TAG=\"$(KSU_VERSION_TAG_FALLBACK)\"
+-endif
+ 
+ ifndef KSU_NEXT_MANAGER_SIZE
+ KSU_NEXT_MANAGER_SIZE := 0x3e6
+diff --git a/kernel/include/ksu.h b/kernel/include/ksu.h
+index a996d2ff..7a9eca05 100644
+--- a/kernel/include/ksu.h
++++ b/kernel/include/ksu.h
+@@ -4,6 +4,12 @@
+ #include <linux/types.h>
+ #include <linux/workqueue.h>
+ #include <linux/cred.h>
++#ifndef KSU_VERSION
++#define KSU_VERSION 12000
++#endif
++#ifndef KSU_VERSION_TAG
++#define KSU_VERSION_TAG "v1.0.5"
++#endif
+ 
+ #define KERNEL_SU_VERSION KSU_VERSION
+ #define KERNEL_SU_VERSION_TAG KSU_VERSION_TAG
+diff --git a/kernel/supercall/dispatch.c b/kernel/supercall/dispatch.c
+index 6fe1357e..475f39df 100644
+--- a/kernel/supercall/dispatch.c
++++ b/kernel/supercall/dispatch.c
+@@ -132,6 +132,9 @@ static int do_report_event(void __user *arg)
+ 			} else {
+ 				pr_info("post-fs-data triggered\n");
+ 				on_post_fs_data();
++#if defined(CONFIG_KSU_SUSFS) && defined(CONFIG_KSU_SUSFS_SUS_PATH)
++				susfs_init_builtin_sus_paths();
++#endif
+ 			}
+ 		}
+ 		break;
+diff --git a/uapi/supercall.h b/uapi/supercall.h
+index dbcce53f..174f89a7 100644
+--- a/uapi/supercall.h
++++ b/uapi/supercall.h
+@@ -6,8 +6,8 @@
+ 
+ #include "uapi/app_profile.h"
+ 
+-// 2: allowlist v4 root profile flags
+-static const __u32 KERNEL_SU_UAPI_VERSION = 2;
++// 3: align with KSUN Manager CI 33259+ (UAPI 3)
++static const __u32 KERNEL_SU_UAPI_VERSION = 3;
+ 
+ /* Magic numbers for reboot hook to install fd */
+ static const __u32 KSU_INSTALL_MAGIC1 = 0xDEADBEEF;

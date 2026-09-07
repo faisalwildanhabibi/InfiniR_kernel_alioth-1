@@ -99,6 +99,20 @@
 #define TIF_PROC_UMOUNTED 35
 #endif
 
+#ifdef CONFIG_KSU
+extern uid_t ksu_manager_appid;
+#ifndef KSU_PER_USER_RANGE
+#define KSU_PER_USER_RANGE 100000
+#endif
+static inline bool susfs_is_ksu_manager(void) {
+	return unlikely(ksu_manager_appid != (uid_t)-1 && ksu_manager_appid == current_uid().val % KSU_PER_USER_RANGE);
+}
+#else
+static inline bool susfs_is_ksu_manager(void) {
+	return false;
+}
+#endif
+
 static inline bool susfs_is_current_proc_umounted(void) {
 	return test_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED);
 }
@@ -108,11 +122,17 @@ static inline void susfs_set_current_proc_umounted(void) {
 }
 
 static inline bool susfs_is_current_proc_umounted_app(void) {
+	if (unlikely(current_uid().val == 0 || susfs_is_ksu_manager())) {
+		return false;
+	}
 	return (test_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED) &&
 			current_uid().val >= 10000);
 }
 
 static inline bool susfs_is_current_non_root_user_app_proc(void) {
+	if (unlikely(current_uid().val == 0 || susfs_is_ksu_manager())) {
+		return false;
+	}
 	return susfs_is_current_proc_umounted_app();
 }
 
