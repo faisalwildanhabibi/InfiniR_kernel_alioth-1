@@ -1122,9 +1122,9 @@ static int susfs_update_open_redirect_inode(struct st_susfs_open_redirect_hlist 
 	struct inode *inode_target;
 	int err = 0;
 
-	err = kern_path(new_entry->target_pathname, LOOKUP_FOLLOW, &path_target);
+	err = kern_path(new_entry->info.target_pathname, LOOKUP_FOLLOW, &path_target);
 	if (err) {
-		SUSFS_LOGE("Failed opening file '%s'\n", new_entry->target_pathname);
+		SUSFS_LOGE("Failed opening file '%s'\n", new_entry->info.target_pathname);
 		return err;
 	}
 
@@ -1134,6 +1134,9 @@ static int susfs_update_open_redirect_inode(struct st_susfs_open_redirect_hlist 
 		err = 1;
 		goto out_path_put_target;
 	}
+
+	new_entry->target_ino = inode_target->i_ino;
+	new_entry->target_dev = inode_target->i_sb->s_dev;
 
 	spin_lock(&inode_target->i_lock);
 	set_bit(AS_FLAGS_OPEN_REDIRECT, &inode_target->i_mapping->flags);
@@ -1159,7 +1162,7 @@ int susfs_add_open_redirect(void __user **arg) {
 
 	spin_lock(&susfs_spin_lock);
 	hash_for_each_safe(OPEN_REDIRECT_HLIST, bkt, tmp_node, tmp_entry, node) {
-		if (!strcmp(tmp_entry->target_pathname, info.target_pathname)) {
+		if (!strcmp(tmp_entry->info.target_pathname, info.target_pathname)) {
 			hash_del(&tmp_entry->node);
 			kfree(tmp_entry);
 			update_hlist = true;
@@ -1168,7 +1171,7 @@ int susfs_add_open_redirect(void __user **arg) {
 	}
 	spin_unlock(&susfs_spin_lock);
 
-	new_entry = kmalloc(sizeof(struct st_susfs_open_redirect_hlist), GFP_KERNEL);
+	new_entry = kzalloc(sizeof(struct st_susfs_open_redirect_hlist), GFP_KERNEL);
 	if (!new_entry) {
 		SUSFS_LOGE("no enough memory\n");
 		info.err = -ENOMEM;
@@ -1176,11 +1179,9 @@ int susfs_add_open_redirect(void __user **arg) {
 		return 1;
 	}
 
-	new_entry->target_ino = info.target_ino;
-	strncpy(new_entry->target_pathname, info.target_pathname, SUSFS_MAX_LEN_PATHNAME-1);
-	strncpy(new_entry->redirected_pathname, info.redirected_pathname, SUSFS_MAX_LEN_PATHNAME-1);
+	memcpy(&new_entry->info, &info, sizeof(info));
 	if (susfs_update_open_redirect_inode(new_entry)) {
-		SUSFS_LOGE("failed adding path '%s' to OPEN_REDIRECT_HLIST\n", new_entry->target_pathname);
+		SUSFS_LOGE("failed adding path '%s' to OPEN_REDIRECT_HLIST\n", new_entry->info.target_pathname);
 		kfree(new_entry);
 		info.err = -EINVAL;
 		if (user_info) copy_to_user(&user_info->err, &info.err, sizeof(info.err));
@@ -1188,13 +1189,13 @@ int susfs_add_open_redirect(void __user **arg) {
 	}
 
 	spin_lock(&susfs_spin_lock);
-	hash_add(OPEN_REDIRECT_HLIST, &new_entry->node, info.target_ino);
+	hash_add(OPEN_REDIRECT_HLIST, &new_entry->node, new_entry->target_ino);
 	if (update_hlist) {
 		SUSFS_LOGI("target_ino: '%lu', target_pathname: '%s', redirected_pathname: '%s', is successfully updated to OPEN_REDIRECT_HLIST\n",
-				new_entry->target_ino, new_entry->target_pathname, new_entry->redirected_pathname);	
+				new_entry->target_ino, new_entry->info.target_pathname, new_entry->info.redirected_pathname);	
 	} else {
 		SUSFS_LOGI("target_ino: '%lu', target_pathname: '%s' redirected_pathname: '%s', is successfully added to OPEN_REDIRECT_HLIST\n",
-				new_entry->target_ino, new_entry->target_pathname, new_entry->redirected_pathname);
+				new_entry->target_ino, new_entry->info.target_pathname, new_entry->info.redirected_pathname);
 	}
 	spin_unlock(&susfs_spin_lock);
 	info.err = 0;
@@ -1210,7 +1211,7 @@ struct filename* susfs_get_redirected_path(unsigned long ino) {
 	hash_for_each_possible(OPEN_REDIRECT_HLIST, entry, node, ino) {
 		if (entry->target_ino == ino) {
 			SUSFS_LOGI("Redirect for ino: %lu\n", ino);
-			return getname_kernel(entry->redirected_pathname);
+			return getname_kernel(entry->info.redirected_pathname);
 		}
 	}
 	return ERR_PTR(-ENOENT);
