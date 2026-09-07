@@ -1,5 +1,5 @@
 diff --git a/kernel/Kbuild b/kernel/Kbuild
-index e6f91995..33627854 100644
+index e6f91995..d8d4363c 100644
 --- a/kernel/Kbuild
 +++ b/kernel/Kbuild
 @@ -85,30 +85,14 @@ $(info -- KernelSU-Next Git repo detected at: $(GIT_ROOT))
@@ -10,8 +10,8 @@ index e6f91995..33627854 100644
 -ifdef KSU_GIT_VERSION_VALID
 -# ksu_version: major * 30000 + git version for historical reasons
 -$(eval KSU_VERSION=$(shell expr 30000 + $(KSU_GIT_VERSION) + 200))
-+# Calculate version: set to 12000 for upstream compatibility (Shamiko <= 20000 and KSUN Manager >= 10940)
-+KSU_VERSION ?= 12000
++# Calculate version: set to 33188 for KSUN v3.3.0+ Manager compatibility
++KSU_VERSION ?= 33188
  $(info -- KernelSU-Next version: $(KSU_VERSION))
  ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 -else
@@ -37,7 +37,7 @@ index e6f91995..33627854 100644
  ifndef KSU_NEXT_MANAGER_SIZE
  KSU_NEXT_MANAGER_SIZE := 0x3e6
 diff --git a/kernel/include/ksu.h b/kernel/include/ksu.h
-index a996d2ff..7a9eca05 100644
+index a996d2ff..8ce764bb 100644
 --- a/kernel/include/ksu.h
 +++ b/kernel/include/ksu.h
 @@ -4,6 +4,12 @@
@@ -45,7 +45,7 @@ index a996d2ff..7a9eca05 100644
  #include <linux/workqueue.h>
  #include <linux/cred.h>
 +#ifndef KSU_VERSION
-+#define KSU_VERSION 12000
++#define KSU_VERSION 33188
 +#endif
 +#ifndef KSU_VERSION_TAG
 +#define KSU_VERSION_TAG "v1.0.5"
