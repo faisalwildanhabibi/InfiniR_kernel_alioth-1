@@ -91,8 +91,8 @@ int susfs_set_i_state_on_external_dir(char __user* user_info, int cmd) {
 	}
 
 	resolved_pathname = d_path(&path, tmp_buf, PAGE_SIZE);
-	if (!resolved_pathname) {
-		err = -ENOMEM;
+	if (IS_ERR(resolved_pathname)) {
+		err = PTR_ERR(resolved_pathname);
 		goto out_path_put_path;
 	}
 
@@ -166,8 +166,8 @@ int susfs_add_sus_path(void __user **arg) {
 	}
 
 	resolved_pathname = d_path(&path, tmp_buf, PAGE_SIZE);
-	if (!resolved_pathname) {
-		err = -ENOMEM;
+	if (IS_ERR(resolved_pathname)) {
+		err = PTR_ERR(resolved_pathname);
 		goto out_kfree_tmp_buf;
 	}
 
@@ -299,11 +299,11 @@ int susfs_add_sus_path_loop(void __user **arg) {
 	}
 
 	resolved_pathname = d_path(&path, tmp_buf, PAGE_SIZE);
-	SUSFS_LOGI("resolved_pathname: %s\n", resolved_pathname);
-	if (!resolved_pathname) {
-		err = -ENOMEM;
+	if (IS_ERR(resolved_pathname)) {
+		err = PTR_ERR(resolved_pathname);
 		goto out_kfree_tmp_buf_loop;
 	}
+	SUSFS_LOGI("resolved_pathname: %s\n", resolved_pathname);
 
 	if (susfs_starts_with(resolved_pathname, "/storage/")) {
 		err = -EINVAL;
@@ -941,8 +941,8 @@ void susfs_auto_add_try_umount_for_bind_mount(struct path *path) {
 	}
 
 	dpath = d_path(path, pathname, PAGE_SIZE);
-	if (!dpath) {
-		SUSFS_LOGE("dpath is NULL\n");
+	if (IS_ERR(dpath)) {
+		SUSFS_LOGE("dpath error: %ld\n", PTR_ERR(dpath));
 		goto out_free_pathname;
 	}
 

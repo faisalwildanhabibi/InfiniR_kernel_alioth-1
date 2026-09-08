@@ -3302,13 +3302,15 @@ struct mnt_namespace *copy_mnt_ns(unsigned long flags, struct mnt_namespace *ns,
 	// Here We are only interested in processes of which original mnt namespace belongs to zygote 
 	// Also we just make use of existing 'q' mount pointer, no need to delcare extra mount pointer
 	if (is_zygote_pid) {
-		last_entry_mnt_id = list_first_entry(&new_ns->list, struct mount, mnt_list)->mnt_id;
-		list_for_each_entry(q, &new_ns->list, mnt_list) {
-			if (unlikely(q->mnt_id >= DEFAULT_SUS_MNT_ID)) {
-				continue;
+		if (!list_empty(&new_ns->list)) {
+			last_entry_mnt_id = list_first_entry(&new_ns->list, struct mount, mnt_list)->mnt_id;
+			list_for_each_entry(q, &new_ns->list, mnt_list) {
+				if (unlikely(q->mnt_id >= DEFAULT_SUS_MNT_ID)) {
+					continue;
+				}
+				q->mnt.susfs_mnt_id_backup = q->mnt_id;
+				q->mnt_id = last_entry_mnt_id++;
 			}
-			q->mnt.susfs_mnt_id_backup = q->mnt_id;
-			q->mnt_id = last_entry_mnt_id++;
 		}
 	}
 #endif

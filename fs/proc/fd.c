@@ -62,7 +62,7 @@ static int seq_show(struct seq_file *m, void *v)
 	mnt = real_mount(file->f_path.mnt);
 	if (likely(susfs_is_current_non_root_user_app_proc()) &&
 			mnt->mnt_id >= DEFAULT_SUS_MNT_ID) {
-		for (; mnt->mnt_id >= DEFAULT_SUS_MNT_ID; mnt = mnt->mnt_parent) { }
+		for (; mnt->mnt_id >= DEFAULT_SUS_MNT_ID && mnt != mnt->mnt_parent; mnt = mnt->mnt_parent) { }
 	}
 	seq_printf(m, "pos:\t%lli\nflags:\t0%o\nmnt_id:\t%i\n",
 			(long long)file->f_pos, f_flags,

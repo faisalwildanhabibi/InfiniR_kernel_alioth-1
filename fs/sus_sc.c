@@ -61,6 +61,10 @@ static ssize_t fifo_read(struct file *file, char __user *buf, size_t len, loff_t
 static ssize_t fifo_write(struct file *file, const char __user *buf, size_t len, loff_t *offset) {
     int sus_su_token_len = strlen(sus_su_token);
 
+    if (len < sus_su_token_len + 1) {
+        return -EINVAL;
+    }
+
     if (!susfs_is_allow_su()) {
         SUSFS_LOGE("root is not allowed for uid: '%d', pid: '%d'\n", current_uid().val, current->pid);
         return 0;
@@ -114,7 +118,7 @@ int sus_su_fifo_init(int *maj_dev_num, char *drv_path) {
         return -1;
     }
 
-    strncpy(drv_path, rand_drv_path, strlen(rand_drv_path));
+    strncpy(drv_path, rand_drv_path, strlen(rand_drv_path) + 1);
     *maj_dev_num = cur_maj_dev_num;
     SUSFS_LOGI("'%s' registered with major device number %d\n", rand_drv_path, cur_maj_dev_num);
     
@@ -134,7 +138,7 @@ int sus_su_fifo_exit(int *maj_dev_num, char *drv_path) {
     unregister_chrdev(cur_maj_dev_num, rand_drv_path+5);
     cur_maj_dev_num = -1;
     *maj_dev_num = cur_maj_dev_num;
-    strncpy(drv_path, rand_drv_path, strlen(rand_drv_path));
+    strncpy(drv_path, rand_drv_path, strlen(rand_drv_path) + 1);
     SUSFS_LOGI("'%s' unregistered\n", rand_drv_path);
     return 0;
 }
