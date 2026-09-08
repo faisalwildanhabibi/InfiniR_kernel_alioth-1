@@ -237,7 +237,6 @@ struct st_susfs_variant {
 int susfs_set_i_state_on_external_dir(char __user* user_info, int cmd);
 int susfs_add_sus_path(void __user **arg);
 int susfs_add_sus_path_loop(void __user **arg);
-void susfs_init_builtin_sus_paths(void);
 #endif
 /* sus_mount */
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
