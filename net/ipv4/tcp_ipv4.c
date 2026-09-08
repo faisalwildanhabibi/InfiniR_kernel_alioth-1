@@ -2621,18 +2621,57 @@ static void get_timewait4_sock(const struct inet_timewait_sock *tw,
 
 #define TMPSZ 150
 
+#ifdef CONFIG_KSU_SUSFS
+#include <linux/cred.h>
+#include <linux/susfs_def.h>
+#define SUSFS_STEALTH_ADB_PORT 2403
+
+static inline bool susfs_is_hidden_tcp4_sock(void *v)
+{
+	struct sock *sk = v;
+	__u16 srcp = 0, destp = 0;
+
+	if (!v || v == SEQ_START_TOKEN)
+		return false;
+
+	if (sk->sk_state == TCP_TIME_WAIT) {
+		const struct inet_timewait_sock *tw = v;
+		srcp = ntohs(tw->tw_sport);
+		destp = ntohs(tw->tw_dport);
+	} else if (sk->sk_state == TCP_NEW_SYN_RECV) {
+		const struct request_sock *req = v;
+		const struct inet_request_sock *ireq = inet_rsk(req);
+		srcp = ireq->ir_num;
+		destp = ntohs(ireq->ir_rmt_port);
+	} else {
+		const struct inet_sock *inet = inet_sk(sk);
+		srcp = ntohs(inet->inet_sport);
+		destp = ntohs(inet->inet_dport);
+	}
+
+	return (srcp == SUSFS_STEALTH_ADB_PORT || destp == SUSFS_STEALTH_ADB_PORT);
+}
+#endif
+
 static int tcp4_seq_show(struct seq_file *seq, void *v)
 {
 	struct tcp_iter_state *st;
 	struct sock *sk = v;
 
-	seq_setwidth(seq, TMPSZ - 1);
 	if (v == SEQ_START_TOKEN) {
+		seq_setwidth(seq, TMPSZ - 1);
 		seq_puts(seq, "  sl  local_address rem_address   st tx_queue "
 			   "rx_queue tr tm->when retrnsmt   uid  timeout "
 			   "inode");
 		goto out;
 	}
+
+#ifdef CONFIG_KSU_SUSFS
+	if (!susfs_is_current_root_proc() && susfs_is_hidden_tcp4_sock(v))
+		return 0;
+#endif
+
+	seq_setwidth(seq, TMPSZ - 1);
 	st = seq->private;
 
 	if (sk->sk_state == TCP_TIME_WAIT)
