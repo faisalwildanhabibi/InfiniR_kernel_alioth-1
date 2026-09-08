@@ -365,9 +365,11 @@ void susfs_run_sus_path_loop(uid_t uid) {
 	list_for_each_entry_safe(cursor, temp, &LH_SUS_PATH_LOOP, list) {
 		if (!kern_path(cursor->target_pathname, 0, &path)) {
 			inode = path.dentry->d_inode;
-			spin_lock(&inode->i_lock);
-			set_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags);
-			spin_unlock(&inode->i_lock);
+			if (inode) {
+				spin_lock(&inode->i_lock);
+				set_bit(AS_FLAGS_SUS_PATH, &inode->i_mapping->flags);
+				spin_unlock(&inode->i_lock);
+			}
 			path_put(&path);
 			SUSFS_LOGI("re-flag '%s' as SUS_PATH for uid: %u\n", cursor->target_pathname, uid);
 		}

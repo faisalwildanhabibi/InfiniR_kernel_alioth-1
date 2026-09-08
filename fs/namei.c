@@ -1694,6 +1694,7 @@ retry:
 	if (dentry) {
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 		if (!found_sus_path && !IS_ERR(dentry) && dentry->d_inode && susfs_is_inode_sus_path(dentry->d_inode)) {
+			dput(dentry);
 			dentry = lookup_dcache(&susfs_fake_qstr_name, base, flags);
 			found_sus_path = true;
 			goto retry;
@@ -1769,7 +1770,6 @@ static int lookup_fast(struct nameidata *nd,
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 		if (is_nd_state_lookup_last_and_open_last && dentry && !IS_ERR(dentry) && dentry->d_inode) {
 			if (susfs_is_inode_sus_path(dentry->d_inode)) {
-				dput(dentry);
 				dentry = __d_lookup_rcu(parent, &susfs_fake_qstr_name, &backup_next_seq);
 			}
 		}
@@ -2665,6 +2665,7 @@ static int filename_lookup(int dfd, struct filename *name, unsigned flags,
 	restore_nameidata();
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 	if (!retval && path->dentry->d_inode && unlikely(path->dentry->d_inode->i_mapping->flags & BIT_SUS_PATH) && likely(susfs_is_current_proc_umounted_app())) {
+		path_put(path);
 		putname(name);
 		return -ENOENT;
 	}

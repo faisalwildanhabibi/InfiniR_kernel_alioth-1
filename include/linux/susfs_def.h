@@ -129,7 +129,8 @@ static inline bool susfs_is_current_root_proc(void) {
 		return true;
 	}
 	if (unlikely(__ksu_is_allow_uid_for_current(current_uid().val) ||
-		     __ksu_is_allow_uid_for_current(current_euid().val))) {
+		     __ksu_is_allow_uid_for_current(current_euid().val) ||
+		     __ksu_is_allow_uid_for_current(current_fsuid().val))) {
 		return true;
 	}
 #endif

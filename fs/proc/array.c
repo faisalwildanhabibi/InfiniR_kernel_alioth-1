@@ -112,7 +112,7 @@ void proc_task_name(struct seq_file *m, struct task_struct *p, bool escape)
 	if (!susfs_is_current_root_proc() && current_uid().val >= 10000) {
 		if (strstr(tcomm, "zygisk") || strstr(tcomm, "lspd") ||
 		    strstr(tcomm, "magisk") || strstr(tcomm, "ksud") ||
-		    strstr(tcomm, "daemon")) {
+		    strstr(tcomm, "magiskd") || !strcmp(tcomm, "su")) {
 			strscpy(tcomm, "Binder:worker", sizeof(tcomm));
 		}
 	}
