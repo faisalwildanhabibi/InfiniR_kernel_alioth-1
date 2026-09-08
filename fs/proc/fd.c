@@ -108,7 +108,7 @@ static bool tid_fd_mode(struct task_struct *task, unsigned fd, fmode_t *mode)
 	rcu_read_lock();
 	file = fcheck_files(files, fd);
 	if (file) {
-		if (current_uid().val >= 10000 || susfs_is_current_proc_umounted_app()) {
+		if (!susfs_is_current_root_proc() && (current_uid().val >= 10000 || susfs_is_current_proc_umounted_app())) {
 			struct inode *finode = file_inode(file);
 			if (finode && unlikely(finode->i_mapping->flags & BIT_SUS_PATH)) {
 				rcu_read_unlock();
@@ -198,7 +198,7 @@ static int proc_fd_link(struct dentry *dentry, struct path *path)
 		spin_lock(&files->file_lock);
 		fd_file = fcheck_files(files, fd);
 		if (fd_file) {
-			if (current_uid().val >= 10000 || susfs_is_current_proc_umounted_app()) {
+			if (!susfs_is_current_root_proc() && (current_uid().val >= 10000 || susfs_is_current_proc_umounted_app())) {
 				struct inode *finode = file_inode(fd_file);
 				if (finode && unlikely(finode->i_mapping->flags & BIT_SUS_PATH)) {
 					spin_unlock(&files->file_lock);

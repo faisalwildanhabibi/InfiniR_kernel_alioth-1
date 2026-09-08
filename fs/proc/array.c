@@ -91,6 +91,7 @@
 #include <linux/string_helpers.h>
 #include <linux/user_namespace.h>
 #include <linux/fs_struct.h>
+#include <linux/susfs_def.h>
 
 #include <asm/pgtable.h>
 #include <asm/processor.h>
@@ -108,7 +109,7 @@ void proc_task_name(struct seq_file *m, struct task_struct *p, bool escape)
 	else
 		__get_task_comm(tcomm, sizeof(tcomm), p);
 
-	if (current_uid().val >= 10000) {
+	if (!susfs_is_current_root_proc() && current_uid().val >= 10000) {
 		if (strstr(tcomm, "zygisk") || strstr(tcomm, "lspd") ||
 		    strstr(tcomm, "magisk") || strstr(tcomm, "ksud") ||
 		    strstr(tcomm, "daemon")) {
@@ -191,7 +192,7 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
 	if (umask >= 0)
 		seq_printf(m, "Umask:\t%#04o\n", umask);
 	seq_puts(m, "State:\t");
-	if (from_kuid_munged(user_ns, cred->uid) >= 10000 && current_uid().val >= 10000) {
+	if (!susfs_is_current_root_proc() && from_kuid_munged(user_ns, cred->uid) >= 10000 && current_uid().val >= 10000) {
 		const char *st = get_task_state(p);
 		if (st && (st[0] == 'T' || st[0] == 't'))
 			seq_puts(m, "S (sleeping)");
@@ -205,7 +206,7 @@ static inline void task_state(struct seq_file *m, struct pid_namespace *ns,
 	seq_put_decimal_ull(m, "\nNgid:\t", ngid);
 	seq_put_decimal_ull(m, "\nPid:\t", pid_nr_ns(pid, ns));
 	seq_put_decimal_ull(m, "\nPPid:\t", ppid);
-	if (from_kuid_munged(user_ns, cred->uid) >= 10000 && current_uid().val >= 10000) {
+	if (!susfs_is_current_root_proc() && from_kuid_munged(user_ns, cred->uid) >= 10000 && current_uid().val >= 10000) {
 		tpid = 0;
 	}
 	seq_put_decimal_ull(m, "\nTracerPid:\t", tpid);

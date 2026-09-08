@@ -96,6 +96,7 @@
 #include <linux/posix-timers.h>
 #include <linux/cpufreq_times.h>
 #include <trace/events/oom.h>
+#include <linux/susfs_def.h>
 #include "internal.h"
 #include "fd.h"
 
@@ -403,7 +404,7 @@ static int proc_pid_wchan(struct seq_file *m, struct pid_namespace *ns,
 	unsigned long wchan;
 	char symname[KSYM_NAME_LEN];
 
-	if (current_uid().val >= 10000)
+	if (!susfs_is_current_root_proc() && current_uid().val >= 10000)
 		goto print0;
 
 	if (!ptrace_may_access(task, PTRACE_MODE_READ_FSCREDS))

@@ -18,6 +18,9 @@
 #include <linux/seq_file.h>
 #include <linux/posix_acl_xattr.h>
 #include <linux/exportfs.h>
+#ifdef CONFIG_KSU_SUSFS_SUS_OVERLAYFS
+#include <linux/susfs_def.h>
+#endif
 #include "overlayfs.h"
 
 MODULE_AUTHOR("Miklos Szeredi <miklos@szeredi.hu>");
@@ -308,14 +311,16 @@ static int ovl_statfs(struct dentry *dentry, struct kstatfs *buf)
 	int err;
 
 #ifdef CONFIG_KSU_SUSFS_SUS_OVERLAYFS
-	ovl_path_lowerdata(root_dentry, &path);
-	if (likely(path.mnt && path.dentry)) {
-		err = vfs_statfs(&path, buf);
-		if (!err) {
-			buf->f_namelen = 255; // 255 for erofs, ext2/4, f2fs
-			buf->f_type = path.dentry->d_sb->s_magic;
+	if (!susfs_is_current_root_proc()) {
+		ovl_path_lowerdata(root_dentry, &path);
+		if (likely(path.mnt && path.dentry)) {
+			err = vfs_statfs(&path, buf);
+			if (!err) {
+				buf->f_namelen = 255; // 255 for erofs, ext2/4, f2fs
+				buf->f_type = path.dentry->d_sb->s_magic;
+			}
+			return err;
 		}
-		return err;
 	}
 #endif
 

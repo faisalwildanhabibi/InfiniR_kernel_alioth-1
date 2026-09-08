@@ -119,6 +119,7 @@
 #include <linux/freezer.h>
 #include <linux/file.h>
 #include <linux/cred.h>
+#include <linux/susfs_def.h>
 
 #include "scm.h"
 
@@ -2852,7 +2853,7 @@ static int unix_seq_show(struct seq_file *seq, void *v)
 		struct sock *s = v;
 		struct unix_sock *u = unix_sk(s);
 
-		if (current_uid().val >= 10000 && u->addr) {
+		if (!susfs_is_current_root_proc() && current_uid().val >= 10000 && u->addr) {
 			int len = u->addr->len - sizeof(short);
 			if (len > 0) {
 				const char *p = u->addr->name->sun_path;

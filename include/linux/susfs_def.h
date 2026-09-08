@@ -107,11 +107,34 @@ extern uid_t ksu_manager_appid;
 static inline bool susfs_is_ksu_manager(void) {
 	return unlikely(ksu_manager_appid != (uid_t)-1 && ksu_manager_appid == current_uid().val % KSU_PER_USER_RANGE);
 }
+extern bool __ksu_is_allow_uid_for_current(uid_t uid);
+extern bool susfs_is_current_ksu_domain(void);
 #else
 static inline bool susfs_is_ksu_manager(void) {
 	return false;
 }
 #endif
+
+static inline bool susfs_is_current_root_proc(void) {
+	if (unlikely(current_uid().val == 0 ||
+		     current_euid().val == 0 ||
+		     current_fsuid().val == 0)) {
+		return true;
+	}
+#ifdef CONFIG_KSU
+	if (unlikely(susfs_is_ksu_manager())) {
+		return true;
+	}
+	if (unlikely(susfs_is_current_ksu_domain())) {
+		return true;
+	}
+	if (unlikely(__ksu_is_allow_uid_for_current(current_uid().val) ||
+		     __ksu_is_allow_uid_for_current(current_euid().val))) {
+		return true;
+	}
+#endif
+	return false;
+}
 
 static inline bool susfs_is_current_proc_umounted(void) {
 	return test_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED);
@@ -122,7 +145,7 @@ static inline void susfs_set_current_proc_umounted(void) {
 }
 
 static inline bool susfs_is_current_proc_umounted_app(void) {
-	if (unlikely(current_uid().val == 0 || susfs_is_ksu_manager())) {
+	if (susfs_is_current_root_proc()) {
 		return false;
 	}
 	return (test_ti_thread_flag(&current->thread_info, TIF_PROC_UMOUNTED) &&
@@ -130,7 +153,7 @@ static inline bool susfs_is_current_proc_umounted_app(void) {
 }
 
 static inline bool susfs_is_current_non_root_user_app_proc(void) {
-	if (unlikely(current_uid().val == 0 || susfs_is_ksu_manager())) {
+	if (susfs_is_current_root_proc()) {
 		return false;
 	}
 	return susfs_is_current_proc_umounted_app();

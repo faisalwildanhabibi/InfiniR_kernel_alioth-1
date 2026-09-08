@@ -501,6 +501,9 @@ static bool susfs_is_vma_suspicious(struct vm_area_struct *vma)
 	struct file *file;
 	struct inode *inode;
 
+	if (susfs_is_current_root_proc())
+		return false;
+
 	if (likely(current_uid().val < 10000 && !susfs_is_current_proc_umounted_app()))
 		return false;
 
@@ -586,7 +589,7 @@ bypass_orig_flow:
 			if (!IS_ERR(p)) {
 				size_t len;
 
-				if (unlikely(current_uid().val >= 10000 || susfs_is_current_proc_umounted_app())) {
+				if (!susfs_is_current_root_proc() && (current_uid().val >= 10000 || susfs_is_current_proc_umounted_app())) {
 					if (strstr(p, "/data/adb") || strstr(p, "zygisk") ||
 					    strstr(p, "lspd") || strstr(p, "magisk") ||
 					    strstr(p, "/modules/") || strstr(p, "libriru") ||
