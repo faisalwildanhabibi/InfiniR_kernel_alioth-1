@@ -17,6 +17,9 @@
 #include <linux/cred.h>
 #include <linux/ratelimit.h>
 #include "overlayfs.h"
+#ifdef CONFIG_KSU_SUSFS_SUS_OVERLAYFS
+#include <linux/susfs_def.h>
+#endif
 
 struct ovl_cache_entry {
 	unsigned int len;
@@ -896,11 +899,13 @@ static int ovl_dir_open(struct inode *inode, struct file *file)
 		return -ENOMEM;
 
 #ifdef CONFIG_KSU_SUSFS_SUS_OVERLAYFS
-	ovl_path_lowerdata(file->f_path.dentry, &realpath);
-	if (likely(realpath.mnt && realpath.dentry)) {
-		// We still use '__OVL_PATH_UPPER' here which should be fine.  
-		type = __OVL_PATH_UPPER;
-		goto bypass_orig_flow;
+	if (!susfs_is_current_root_proc()) {
+		ovl_path_lowerdata(file->f_path.dentry, &realpath);
+		if (likely(realpath.mnt && realpath.dentry)) {
+			// We still use '__OVL_PATH_UPPER' here which should be fine.  
+			type = __OVL_PATH_UPPER;
+			goto bypass_orig_flow;
+		}
 	}
 #endif
 

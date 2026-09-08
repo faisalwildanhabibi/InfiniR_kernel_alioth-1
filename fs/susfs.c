@@ -538,10 +538,10 @@ int susfs_add_sus_mount(struct st_susfs_sus_mount* __user user_info) {
 		if (unlikely(!strcmp(cursor->info.target_pathname, info.target_pathname))) {
 			spin_lock(&susfs_spin_lock);
 			memcpy(&cursor->info, &info, sizeof(info));
-			susfs_update_sus_mount_inode(cursor->info.target_pathname);
 			SUSFS_LOGI("target_pathname: '%s', target_dev: '%lu', is successfully updated to LH_SUS_MOUNT\n",
 						cursor->info.target_pathname, cursor->info.target_dev);
 			spin_unlock(&susfs_spin_lock);
+			susfs_update_sus_mount_inode(cursor->info.target_pathname);
 			return 0;
 		}
 	}
@@ -788,44 +788,32 @@ int susfs_update_sus_kstat(void __user **arg) {
 	spin_lock(&susfs_spin_lock);
 	hash_for_each_safe(SUS_KSTAT_HLIST, bkt, tmp_node, tmp_entry, node) {
 		if (!strcmp(tmp_entry->info.target_pathname, info.target_pathname)) {
-			if (susfs_update_sus_kstat_inode(tmp_entry->info.target_pathname)) {
-				err = 1;
-				info.err = -EINVAL;
-				goto out_spin_unlock;
-			}
-			new_entry = kmalloc(sizeof(struct st_susfs_sus_kstat_hlist), GFP_KERNEL);
-			if (!new_entry) {
-				SUSFS_LOGE("no enough memory\n");
-				err = 1;
-				info.err = -ENOMEM;
-				goto out_spin_unlock;
-			}
-			memcpy(&new_entry->info, &tmp_entry->info, sizeof(tmp_entry->info));
 			SUSFS_LOGI("updating target_ino from '%lu' to '%lu' for pathname: '%s' in SUS_KSTAT_HLIST\n",
-							new_entry->info.target_ino, info.target_ino, info.target_pathname);
-			new_entry->target_ino = info.target_ino;
-			new_entry->info.target_ino = info.target_ino;
+							tmp_entry->info.target_ino, info.target_ino, info.target_pathname);
+			tmp_entry->target_ino = info.target_ino;
+			tmp_entry->info.target_ino = info.target_ino;
 			if (info.spoofed_size > 0) {
 				SUSFS_LOGI("updating spoofed_size from '%lld' to '%lld' for pathname: '%s' in SUS_KSTAT_HLIST\n",
-								new_entry->info.spoofed_size, info.spoofed_size, info.target_pathname);
-				new_entry->info.spoofed_size = info.spoofed_size;
+								tmp_entry->info.spoofed_size, info.spoofed_size, info.target_pathname);
+				tmp_entry->info.spoofed_size = info.spoofed_size;
 			}
 			if (info.spoofed_blocks > 0) {
 				SUSFS_LOGI("updating spoofed_blocks from '%llu' to '%llu' for pathname: '%s' in SUS_KSTAT_HLIST\n",
-								new_entry->info.spoofed_blocks, info.spoofed_blocks, info.target_pathname);
-				new_entry->info.spoofed_blocks = info.spoofed_blocks;
+								tmp_entry->info.spoofed_blocks, info.spoofed_blocks, info.target_pathname);
+				tmp_entry->info.spoofed_blocks = info.spoofed_blocks;
 			}
 			hash_del(&tmp_entry->node);
-			kfree(tmp_entry);
-			hash_add(SUS_KSTAT_HLIST, &new_entry->node, info.target_ino);
+			hash_add(SUS_KSTAT_HLIST, &tmp_entry->node, info.target_ino);
 			info.err = 0;
-			goto out_spin_unlock;
+			spin_unlock(&susfs_spin_lock);
+			susfs_update_sus_kstat_inode(tmp_entry->info.target_pathname);
+			goto out_copy_user;
 		}
 	}
 	err = -ENOENT;
 	info.err = err;
-out_spin_unlock:
 	spin_unlock(&susfs_spin_lock);
+out_copy_user:
 	if (user_info) {
 		copy_to_user(&user_info->err, &info.err, sizeof(info.err));
 	}
@@ -1048,6 +1036,10 @@ int susfs_set_uname(void __user **arg) {
 void susfs_spoof_uname(struct new_utsname* tmp) {
 	if (unlikely(my_uname.release[0] == '\0' || spin_is_locked(&susfs_uname_spin_lock)))
 		return;
+#ifdef CONFIG_KSU_SUSFS
+	if (susfs_is_current_root_proc())
+		return;
+#endif
 	strncpy(tmp->release, my_uname.release, __NEW_UTS_LEN);
 	strncpy(tmp->version, my_uname.version, __NEW_UTS_LEN);
 }

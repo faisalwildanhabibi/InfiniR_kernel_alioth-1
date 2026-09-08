@@ -185,6 +185,12 @@ static void avc_dump_query(struct audit_buffer *ab, struct selinux_state *state,
 	char *scontext;
 	u32 scontext_len;
 
+#ifdef CONFIG_KSU_SUSFS
+	if (unlikely(ssid == susfs_ksu_sid && susfs_is_avc_log_spoofing_enabled)) {
+		audit_log_format(ab, "scontext=%s", "u:r:kernel:s0");
+		goto check_tsid;
+	}
+#endif
 	rc = security_sid_to_context(state, ssid, &scontext, &scontext_len);
 	if (rc)
 		audit_log_format(ab, "ssid=%d", ssid);
@@ -193,17 +199,14 @@ static void avc_dump_query(struct audit_buffer *ab, struct selinux_state *state,
 		kfree(scontext);
 	}
 
-	rc = security_sid_to_context(state, tsid, &scontext, &scontext_len);
 #ifdef CONFIG_KSU_SUSFS
+check_tsid:
 	if (unlikely(tsid == susfs_ksu_sid && susfs_is_avc_log_spoofing_enabled)) {
-		if (rc)
-			audit_log_format(ab, " tsid=%d", susfs_kernel_sid);
-		else
-			audit_log_format(ab, " tcontext=%s", "u:r:kernel:s0");
+		audit_log_format(ab, " tcontext=%s", "u:r:kernel:s0");
 		goto bypass_orig_flow;
 	}
 #endif
-
+	rc = security_sid_to_context(state, tsid, &scontext, &scontext_len);
 	if (rc)
 		audit_log_format(ab, " tsid=%d", tsid);
 	else {
