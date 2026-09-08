@@ -164,6 +164,8 @@ static int fillonedir(struct dir_context *ctx, const char *name, int namlen,
 		return -EOVERFLOW;
 	}
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (susfs_is_current_root_proc())
+		goto orig_flow;
 	if (buf->is_base_dentry_android_data_root_dir) {
 		if (susfs_is_sus_android_data_d_name_found(name)) {
 			return 0;
@@ -299,6 +301,8 @@ static int filldir(struct dir_context *ctx, const char *name, int namlen,
 		return -EOVERFLOW;
 	}
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (susfs_is_current_root_proc())
+		goto orig_flow;
 	if (buf->is_base_dentry_android_data_root_dir) {
 		if (susfs_is_sus_android_data_d_name_found(name)) {
 			return 0;
@@ -441,6 +445,8 @@ static int filldir64(struct dir_context *ctx, const char *name, int namlen,
 		if (signal_pending(current))
 			return -EINTR;
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (susfs_is_current_root_proc())
+		goto orig_flow;
 	if (buf->is_base_dentry_android_data_root_dir) {
 		if (susfs_is_sus_android_data_d_name_found(name)) {
 			return 0;
@@ -596,6 +602,8 @@ static int compat_fillonedir(struct dir_context *ctx, const char *name,
 		return -EOVERFLOW;
 	}
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (susfs_is_current_root_proc())
+		goto orig_flow;
 	if (buf->is_base_dentry_android_data_root_dir) {
 		if (susfs_is_sus_android_data_d_name_found(name)) {
 			return 0;
@@ -725,6 +733,8 @@ static int compat_filldir(struct dir_context *ctx, const char *name, int namlen,
 		if (signal_pending(current))
 			return -EINTR;
 #ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (susfs_is_current_root_proc())
+		goto orig_flow;
 	if (buf->is_base_dentry_android_data_root_dir) {
 		if (susfs_is_sus_android_data_d_name_found(name)) {
 			return 0;

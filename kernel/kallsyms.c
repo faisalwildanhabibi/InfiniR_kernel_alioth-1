@@ -24,6 +24,9 @@
 #include <linux/filter.h>
 #include <linux/ftrace.h>
 #include <linux/compiler.h>
+#ifdef CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+#include <linux/susfs_def.h>
+#endif
 
 /*
  * These will be re-linked against their real values
@@ -643,6 +646,18 @@ static int s_show(struct seq_file *m, void *p)
 	if (!iter->name[0])
 		return 0;
 
+#ifdef CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
+	if (!susfs_is_current_root_proc()) {
+		if (strstr(iter->name, "ksu_") || strstr(iter->name, "susfs_") ||
+		    strstr(iter->name, "ksud") || strstr(iter->name, "escape_with_root") ||
+		    strstr(iter->name, "throne_tracker") || strstr(iter->name, "crown_manager") ||
+		    strstr(iter->name, "is_manager_apk") || strstr(iter->name, "sucompat") ||
+		    strstr(iter->name, "tiny_sulog") || strstr(iter->name, "anon_ksu")) {
+			return 0;
+		}
+	}
+#endif
+
 	value = iter->show_value ? (void *)iter->value : NULL;
 
 	if (iter->module_name[0]) {
@@ -657,18 +672,8 @@ static int s_show(struct seq_file *m, void *p)
 		seq_printf(m, "%px %c %s\t[%s]\n", value,
 			   type, iter->name, iter->module_name);
 	} else
-#ifndef CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS
 		seq_printf(m, "%px %c %s\n", value,
 			   iter->type, iter->name);
-#else
-	{
-		if (strstr(iter->name, "ksu_") || !strncmp(iter->name, "susfs_", 6) || !strncmp(iter->name, "ksud", 4)) {
-			return 0;
-		}
-		seq_printf(m, "%px %c %s\n", value,
-			   iter->type, iter->name);
-	}
-#endif
 	return 0;
 }
 
