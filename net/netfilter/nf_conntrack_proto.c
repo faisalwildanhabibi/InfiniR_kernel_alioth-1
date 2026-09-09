@@ -38,6 +38,11 @@
 
 #include <linux/ipv6.h>
 #include <linux/in6.h>
+
+#ifdef CONFIG_KSU_SUSFS
+#include <linux/cred.h>
+#include <linux/susfs_def.h>
+#endif
 #include <net/ipv6.h>
 #include <net/inet_frag.h>
 
@@ -534,6 +539,16 @@ getorigdst(struct sock *sk, int optval, void __user *user, int *len)
 	const struct nf_conntrack_tuple_hash *h;
 	struct nf_conntrack_tuple tuple;
 
+#ifdef CONFIG_KSU_SUSFS
+	/* Hide conntrack NAT redirection info from non-root user apps.
+	 * This prevents proxy-detection apps (e.g. AdGuard detection) from
+	 * discovering that traffic is being redirected through a transparent proxy.
+	 * Root processes (KSU/adbd/su) still see the real original destination.
+	 */
+	if (!susfs_is_current_root_proc())
+		return -ENOPROTOOPT;
+#endif
+
 	memset(&tuple, 0, sizeof(tuple));
 
 	lock_sock(sk);
@@ -604,6 +619,12 @@ ipv6_getorigdst(struct sock *sk, int optval, void __user *user, int *len)
 	struct nf_conn *ct;
 	__be32 flow_label;
 	int bound_dev_if;
+
+#ifdef CONFIG_KSU_SUSFS
+	/* Same as IPv4: hide NAT redirection from non-root apps. */
+	if (!susfs_is_current_root_proc())
+		return -ENOPROTOOPT;
+#endif
 
 	lock_sock(sk);
 	tuple.src.u3.in6 = sk->sk_v6_rcv_saddr;
