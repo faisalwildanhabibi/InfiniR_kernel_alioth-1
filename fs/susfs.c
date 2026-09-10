@@ -1003,6 +1003,12 @@ static spinlock_t susfs_uname_spin_lock;
 static struct st_susfs_uname my_uname;
 static void susfs_my_uname_init(void) {
 	memset(&my_uname, 0, sizeof(my_uname));
+	/* Default spoofed identity (stock Xiaomi HyperOS kernel) so that no
+	 * userspace supercall is required: non-root apps will see this
+	 * release/version instead of the real custom kernel string.
+	 */
+	strncpy(my_uname.release, "4.19.157-perf-g92c089fc2d37", __NEW_UTS_LEN);
+	strncpy(my_uname.version, "#1 SMP PREEMPT Tue Jan 13 12:57:01 UTC 2026", __NEW_UTS_LEN);
 }
 
 int susfs_set_uname(void __user **arg) {

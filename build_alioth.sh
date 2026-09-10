@@ -15,8 +15,9 @@ KERNEL_CONFIG="alioth_defconfig" \
 ZIP_KERNEL_STR="coreLinux"
 ZIP_DEVICE_NAME="apollo"
 ZIP_PREFIX_STR="SigmaKernel-v1.0"
-export KBUILD_BUILD_USER="nob0dy"
-export KBUILD_BUILD_HOST="sigmaS0r"
+export KBUILD_BUILD_USER="builder"
+export KBUILD_BUILD_HOST="pangu-build-component-vendor-432215-vj7fq-j7z14-wt7cv"
+export KBUILD_BUILD_TIMESTAMP="Tue Jan 13 12:57:01 UTC 2026"
 USER_OVERRIDE="root"
 IS_WSL_USER="0"
 if [[ $USER == "$USER_OVERRIDE" ]]; then
